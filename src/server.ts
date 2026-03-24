@@ -145,7 +145,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('SUBMIT_ANSWER', async (data) => {
-    const { barId, nickname, answer } = data;
+    // NEW: We now extract the userId from the payload
+    const { barId, nickname, answer, userId } = data;
     const activeQ = activeQuestions[barId];
 
     if (!activeQ) return; 
@@ -156,7 +157,13 @@ io.on('connection', (socket) => {
       const timePenalty = Math.floor((timeElapsed / 10000) * 900);
       const pointsEarned = 1000 - timePenalty;
 
-      await supabase.from('player_scores').insert({ game_id: activeQ.gameId, player_name: nickname, score: pointsEarned });
+      // NEW: We save the user_id to the database if they are logged in!
+      await supabase.from('player_scores').insert({ 
+        game_id: activeQ.gameId, 
+        player_name: nickname, 
+        score: pointsEarned,
+        user_id: userId || null 
+      });
       console.log(`💾 Saved ${pointsEarned} points for ${nickname}`);
     }
   });
